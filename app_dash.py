@@ -90,7 +90,14 @@ def plot_flat_map_image(year, region):
 def plot_globe(year, region):
     temp = anomaly_data[year].load()
     df = temp.to_dataframe().reset_index().dropna()
+
+    # Adjust longitudes to 0-360
     df['adj_lon'] = df['lon'] % 360
+
+    # Explicitly wrap 360° for smooth globe closure
+    # df_360 = df[df['lon'] == -180.0].copy()
+    # df_360['adj_lon'] = 360.0
+    # df = pd.concat([df, df_360])
     df_360 = df[df['lon'] == -180.0].copy()
     if not df_360.empty:
         df_360['adj_lon'] = 360.0
@@ -99,10 +106,18 @@ def plot_globe(year, region):
     lat = np.sort(df['lat'].unique())
     lon = np.linspace(0, 360, 181)
     LON, LAT = np.meshgrid(lon, lat)
-    anomaly_matrix = df.pivot_table(index='lat', columns='adj_lon', values='tempanomaly').reindex(index=lat, columns=lon).fillna(0).values
+
+    anomaly_matrix = df.pivot_table(
+        index='lat',
+        columns='adj_lon',
+        values='tempanomaly',
+        aggfunc='first',
+        dropna=False
+    ).reindex(index=lat, columns=lon, method='nearest').values
 
     lat_rad = np.radians(LAT)
     lon_rad = np.radians(LON - 180)
+
     R = 1 * (1 - 1e-6 * np.abs(LAT)/90)
     X = R * np.cos(lat_rad) * np.cos(lon_rad)
     Y = R * np.cos(lat_rad) * np.sin(lon_rad)
@@ -118,13 +133,16 @@ def plot_globe(year, region):
         x=X, y=Y, z=Z,
         surfacecolor=anomaly_matrix,
         colorscale='RdBu_r',
-        cmin=-5, cmax=5,
+        cmin=-5,
+        cmax=5,
         colorbar=dict(title="Temperature Anomaly (°C)", thickness=20, tickvals=np.arange(-4, 5, 1)),
         text=text_matrix,
-        hoverinfo='text', connectgaps=False,
+        hoverinfo='text',
+        connectgaps=False,
+        # lighting=dict(ambient=0.95, diffuse=0.75, fresnel=0.3, specular=0.3),
+        # lightposition=dict(x=1000, y=1000, z=1000),
         contours={"z": {"show": True, "width": 1, "color": "rgba(0,0,0,0.1)"}}
     )
-
     coastlines = []
     for geom in world.geometry:
         if isinstance(geom, Polygon):
@@ -135,26 +153,42 @@ def plot_globe(year, region):
             continue
         for poly in polygons:
             lons, lats = poly.exterior.coords.xy
+            lons = np.array(lons)
+            lats = np.array(lats)
             x_line = np.cos(np.radians(lats)) * np.cos(np.radians(lons))
             y_line = np.cos(np.radians(lats)) * np.sin(np.radians(lons))
             z_line = np.sin(np.radians(lats))
             coastlines.append(go.Scatter3d(
                 x=x_line, y=y_line, z=z_line,
-                mode='lines', line=dict(color='black', width=1), hoverinfo='skip', showlegend=False))
+                mode='lines',
+                line=dict(color='black', width=1),
+                hoverinfo='skip',
+                showlegend=False
+            ))
 
-    center_lat, center_lon = {
-        'global': (20, 0), 'north_america': (45, -100), 'south_america': (-15, -60),
-        'europe': (50, 10), 'africa': (0, 20), 'asia': (30, 100), 'oceania': (-25, 135), 'antarctica': (-85, 0)
-    }.get(region, (20, 0))
-
+    region_centers = {
+        'global': (20, 0),
+        'north_america': (45, -100),
+        'south_america': (-15, -60),
+        'europe': (50, 10),
+        'africa': (0, 20),
+        'asia': (30, 100),
+        'oceania': (-25, 135),
+        'antarctica': (-85, 0)
+    }
+    center_lat, center_lon = region_centers.get(region, (20, 0))
     camera_eye = get_camera_eye_from_latlon(center_lat, center_lon)
 
     fig = go.Figure(data=[surface] + coastlines)
     fig.update_layout(
         title=f"Temperature Anomalies and Coastlines – {year}",
         scene=dict(
-            xaxis=dict(visible=False), yaxis=dict(visible=False), zaxis=dict(visible=False),
-            aspectmode='manual', aspectratio=dict(x=1.2, y=1.2, z=1.2), camera=dict(eye=camera_eye)
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            zaxis=dict(visible=False),
+            aspectmode='manual',
+            aspectratio=dict(x=1.2, y=1.2, z=1.2),
+            camera=dict(eye=camera_eye)
         ),
         margin=dict(t=50, l=0, r=0, b=0)
     )
