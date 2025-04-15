@@ -1,0 +1,10 @@
+dash
+xarray
+numpy
+pandas
+matplotlib
+scipy
+plotly
+geopandas
+shapely
+cartopy
