@@ -204,4 +204,4 @@ def update_map(year, region, map_type):
         return html.Img(src=img_data, style={"width": "100%"})
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run(debug=True)
