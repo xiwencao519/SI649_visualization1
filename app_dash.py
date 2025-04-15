@@ -238,4 +238,6 @@ def update_map(year, region, map_type):
         return html.Img(src=img_data, style={"width": "100%"})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 8050))
+    app.run(host='0.0.0.0', port=port)
