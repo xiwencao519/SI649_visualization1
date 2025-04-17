@@ -159,7 +159,7 @@ def plot_globe(year, region):
             y_line = np.cos(np.radians(lats)) * np.sin(np.radians(lons))
             z_line = np.sin(np.radians(lats))
             coastlines.append(go.Scatter3d(
-                x=x_line, y=y_line, z=z_line,
+                x=-x_line, y=-y_line, z=z_line,
                 mode='lines',
                 line=dict(color='black', width=1),
                 hoverinfo='skip',
