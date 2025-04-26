@@ -168,13 +168,13 @@ def plot_globe(year, region):
             ))
 
     region_centers = {
-        'global': (20, 0),
-        'north_america': (45, -100),
-        'south_america': (-15, -60),
-        'europe': (50, 10),
-        'africa': (0, 20),
-        'asia': (30, 100),
-        'oceania': (-25, 135),
+        'global': (20, 180),
+        'north_america': (45, 90),
+        'south_america': (-15, 120),
+        'europe': (50, -150),
+        'africa': (0, -160),
+        'asia': (30, -90),
+        'oceania': (-25, -45),
         'antarctica': (-85, 0)
     }
     center_lat, center_lon = region_centers.get(region, (20, 0))
@@ -182,7 +182,7 @@ def plot_globe(year, region):
 
     fig = go.Figure(data=[surface] + coastlines)
     fig.update_layout(
-        title=f"Global Temperature Anomalies – {year}",
+        title=f"Temperature Anomalies – {year}",
         scene=dict(
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
