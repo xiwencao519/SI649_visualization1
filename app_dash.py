@@ -78,11 +78,12 @@ def plot_flat_map_image(year, region):
     cb.set_label("Temperature Anomaly (°C)", fontsize=12)
     cb.set_ticks([-5, -2.5, 0, 2.5, 5])
     cb.set_ticklabels(["-5°C", "-2.5°C", "0°C", "+2.5°C", "+5°C"])
-    plt.title(f"GISTEMP Global Temperature Anomaly Map (Smoothed) - {year}", fontsize=12)
+    plt.title(f"Global Temperature Anomaly Map - {year}", fontsize=12)
     plt.tight_layout()
 
     buf = io.BytesIO()
-    plt.savefig(buf, format="png")
+    plt.savefig(buf, format="png",transparent=True
+               , bbox_inches='tight', pad_inches=0.1)
     plt.close(fig)
     encoded = base64.b64encode(buf.getvalue()).decode()
     return f"data:image/png;base64,{encoded}"
@@ -181,7 +182,7 @@ def plot_globe(year, region):
 
     fig = go.Figure(data=[surface] + coastlines)
     fig.update_layout(
-        title=f"Temperature Anomalies and Coastlines – {year}",
+        title=f"Global Temperature Anomalies – {year}",
         scene=dict(
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
@@ -190,7 +191,9 @@ def plot_globe(year, region):
             aspectratio=dict(x=1.2, y=1.2, z=1.2),
             camera=dict(eye=camera_eye)
         ),
-        margin=dict(t=50, l=0, r=0, b=0)
+        margin=dict(t=50, l=0, r=0, b=0),
+        paper_bgcolor='rgba(0,0,0,0)',  
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     return fig
 
@@ -199,22 +202,29 @@ app = dash.Dash(__name__)
 app.title = "GISTEMP Viewer"
 
 app.layout = html.Div([
-    html.H2("GISTEMP Temperature Anomaly Viewer"),
-    html.Label("Select Year:"),
-    dcc.Slider(id='year-slider', min=1880, max=2024, step=1, value=2024,
-               marks={y: str(y) for y in range(1880, 2025, 20)},
-               tooltip={"placement": "bottom", "always_visible": True}),
-    html.Label("Select Region:"),
-    dcc.Dropdown(id='region-dropdown', value='global', options=[
-        {'label': 'Global', 'value': 'global'},
-        {'label': 'North America', 'value': 'north_america'},
-        {'label': 'South America', 'value': 'south_america'},
-        {'label': 'Europe', 'value': 'europe'},
-        {'label': 'Africa', 'value': 'africa'},
-        {'label': 'Asia', 'value': 'asia'},
-        {'label': 'Australia/Oceania', 'value': 'oceania'},
-        {'label': 'Antarctica', 'value': 'antarctica'},
-    ]),
+    html.H2("Global Temperature Anomaly Viewer"),
+    html.Div([
+        html.Div([
+            html.Label("Select Year:"),
+            dcc.Slider(id='year-slider', min=1880, max=2024, step=1, value=2024,
+                       marks={y: str(y) for y in range(1880, 2025, 20)},
+                       tooltip={"placement": "bottom", "always_visible": True}),
+        ], style={'flex': '2', 'padding-right': '10px'}),
+
+        html.Div([
+            html.Label("Select Region:"),
+            dcc.Dropdown(id='region-dropdown', value='global', options=[
+                {'label': 'Global', 'value': 'global'},
+                {'label': 'North America', 'value': 'north_america'},
+                {'label': 'South America', 'value': 'south_america'},
+                {'label': 'Europe', 'value': 'europe'},
+                {'label': 'Africa', 'value': 'africa'},
+                {'label': 'Asia', 'value': 'asia'},
+                {'label': 'Australia/Oceania', 'value': 'oceania'},
+                {'label': 'Antarctica', 'value': 'antarctica'},
+            ]),
+        ], style={'flex': '1'}),
+    ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'}),
     html.Label("Map Type:"),
     dcc.RadioItems(id='map-type', value='flat', options=[
         {'label': 'Flat Map', 'value': 'flat'},
